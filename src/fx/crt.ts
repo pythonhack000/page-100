@@ -110,6 +110,37 @@ function burstStatic(glass: HTMLElement, canvas: HTMLCanvasElement): void {
   requestAnimationFrame(tick);
 }
 
+/** Page number shown in the header ("P123"), or null while digits are typed. */
+export function readPageNumber(screen: HTMLElement): number | null {
+  const header = screen.querySelector('[data-row="0"]');
+  if (header === null) return null;
+  const text = Array.from(header.children)
+    .slice(0, 4)
+    .map((cell) => cell.textContent ?? '')
+    .join('');
+  const match = /^P(\d{3})$/.exec(text);
+  return match?.[1] === undefined ? null : Number(match[1]);
+}
+
+/** Details sent with the `tv:tune` and `tv:settled` window events. */
+export interface TuneDetail {
+  readonly page: number | null;
+  /** A frozen copy of the picture that was on screen before this change. */
+  readonly previous: HTMLElement | null;
+}
+
+function emit(name: 'tv:tune' | 'tv:settled', detail: TuneDetail): void {
+  window.dispatchEvent(new CustomEvent<TuneDetail>(name, { detail }));
+}
+
+function snapshot(screen: HTMLElement): HTMLElement | null {
+  const picture = screen.querySelector<HTMLElement>('.tt-screen');
+  if (picture === null) return null;
+  const copy = picture.cloneNode(true) as HTMLElement;
+  copy.setAttribute('aria-hidden', 'true');
+  return copy;
+}
+
 function isHeaderMutation(record: MutationRecord): boolean {
   const node = record.target instanceof Element ? record.target : record.target.parentElement;
   return node?.closest('[data-row="0"]') != null;
@@ -125,12 +156,16 @@ function start(): void {
   }
 
   let settling = false;
+  let lastPicture: HTMLElement | null = null;
   const onPageChange = (): void => {
     if (settling) return;
     settling = true;
+    emit('tv:tune', { page: readPageNumber(screen), previous: lastPicture });
     burstStatic(glass, canvas);
     window.setTimeout(() => {
       applyAmbient(screen);
+      lastPicture = snapshot(screen);
+      emit('tv:settled', { page: readPageNumber(screen), previous: lastPicture });
       settling = false;
     }, SETTLE_MS);
   };
@@ -147,7 +182,11 @@ function start(): void {
   });
 
   // First paint: the set warms up, then the room catches the light.
-  window.setTimeout(() => applyAmbient(screen), SETTLE_MS);
+  window.setTimeout(() => {
+    applyAmbient(screen);
+    lastPicture = snapshot(screen);
+    emit('tv:settled', { page: readPageNumber(screen), previous: lastPicture });
+  }, SETTLE_MS);
   document.documentElement.classList.add('is-powered');
 }
 

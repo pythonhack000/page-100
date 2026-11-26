@@ -408,7 +408,82 @@ body {
   }
 }
 
+.remote__sound {
+  min-height: 44px;
+  font-size: 13px !important;
+  letter-spacing: 0.04em;
+}
+
+.remote__sound[aria-pressed="false"] {
+  color: #77736c !important;
+}
+
+/* ---------- Page 666: the set goes wrong ---------- */
+
+[data-haunted="true"] .room__wall {
+  background-color: rgb(150 0 0 / 0.34);
+  animation: room-breathe 3.8s ease-in-out infinite;
+}
+
+[data-haunted="true"] .room__floor {
+  background-color: rgb(110 0 0 / 0.22);
+}
+
+@keyframes room-breathe {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+[data-haunted="true"] .tv__led {
+  animation: led-panic 0.7s steps(2) infinite;
+}
+
+@keyframes led-panic {
+  50% { opacity: 0.2; }
+}
+
+[data-haunted="true"] .tv__vignette {
+  animation-duration: 1.6s;
+  background:
+    radial-gradient(ellipse at center, transparent 45%, rgb(40 0 0 / 0.85) 100%);
+}
+
+/* The ghost: the page you came from, still burnt into the phosphor. */
+.tv__ghost {
+  opacity: 0.1;
+  filter: blur(1px) grayscale(1) brightness(1.6);
+  mix-blend-mode: screen;
+  pointer-events: none;
+  animation: ghost-drift 9s ease-in-out infinite alternate;
+  transition: opacity 120ms linear;
+}
+
+.tv__ghost.is-flashing {
+  opacity: 0.55;
+}
+
+@keyframes ghost-drift {
+  from { transform: scaleX(var(--tv-stretch)) translate(-0.6%, 0.4%); }
+  to { transform: scaleX(var(--tv-stretch)) translate(0.8%, -0.5%); }
+}
+
+/* Lost vertical hold: the picture rolls and tears for a moment. */
+.tv__glass.is-slipping .tt-host:not(.tv__ghost) {
+  animation: hold-slip 420ms steps(6) both;
+}
+
+@keyframes hold-slip {
+  0% { transform: scaleX(var(--tv-stretch)) translateY(0); filter: none; }
+  20% { transform: scaleX(var(--tv-stretch)) translateY(-38%) skewX(-4deg); filter: brightness(1.8) hue-rotate(-30deg); }
+  45% { transform: scaleX(var(--tv-stretch)) translateY(22%) skewX(3deg); filter: contrast(2) saturate(3); }
+  70% { transform: scaleX(var(--tv-stretch)) translateY(-8%); filter: brightness(1.4); }
+  100% { transform: scaleX(var(--tv-stretch)) translateY(0); filter: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  [data-haunted="true"] .room__wall,
+  [data-haunted="true"] .tv__led,
+  .tv__ghost,
   .tv__vignette,
   .is-powered .tt-host,
   .tv__glass.is-tuning .tt-host {
