@@ -40,7 +40,7 @@ npm run build   # production build into dist/
 
 ## Built with Kiro
 
-The `.kiro/` directory holds the project's steering files (product, tech, structure, teletext rules) and one spec per feature (requirements, design, tasks). Kiro wrote the specs and the feature code from them. Claude Code was used alongside it for review, test fixes and build tooling.
+The `.kiro/` directory holds the project's steering files (product, tech, structure, teletext rules) and one spec per feature (requirements, design, tasks). Kiro wrote the specs and the feature code from them. Claude Code was used alongside it for review, test fixes, build tooling and the visual layer around the screen (`src/styles.css`, `src/fx/`).
 
 ## Licence
 
