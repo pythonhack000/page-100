@@ -69,7 +69,8 @@ body {
 
 .tt-host {
   position: absolute;
-  inset: 0;
+  /* Overscan margin so the rounded glass never clips the outer columns. */
+  inset: 4%;
   display: flex;
   justify-content: center;
   align-items: flex-start;
