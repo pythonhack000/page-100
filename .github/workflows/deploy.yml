@@ -3,6 +3,10 @@ name: Deploy
 on:
   push:
     branches: [main]
+  # Data commits pushed with GITHUB_TOKEN do not fire `push`, so redeploy after each data build.
+  workflow_run:
+    workflows: ["Data build"]
+    types: [completed]
   workflow_dispatch:
 
 permissions:
