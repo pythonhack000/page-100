@@ -645,12 +645,14 @@ describe('buildPlainText — mosaic cells → space (task 41)', () => {
       kind: 'mosaic', sixels: 63, fg: 'Cyan', bg: 'Black',
     };
     grid = writeCell(grid, 5, 0, mosaicPartial);
+    // A text cell after it keeps the leading space from being trimmed.
+    grid = writeCell(grid, 5, 1, { kind: 'text', char: 'X' });
 
     // Act
     const lines = buildPlainText(grid);
 
     // Assert
-    expect(lines[5][0]).toBe(' ');
+    expect(lines[5]).toBe(' X');
   });
 
   it('a row of all mosaic cells produces only spaces, which trim to an empty string', () => {
@@ -687,7 +689,7 @@ describe('buildPlainText — double-height pairs (task 42)', () => {
     const lines = buildPlainText(grid);
 
     // Assert — row 3 (top half) has the text
-    expect(lines[3].startsWith('HELLO')).toBe(true);
+    expect(lines[3]?.startsWith('HELLO')).toBe(true);
   });
 
   it('the bottom-half row (row + 1) produces an empty string', () => {
@@ -722,7 +724,7 @@ describe('buildPlainText — trailing spaces trimmed (task 43)', () => {
 
     // Assert
     expect(lines[2]).toBe('HELLO');
-    expect(lines[2].endsWith(' ')).toBe(false);
+    expect(lines[2]?.endsWith(' ')).toBe(false);
   });
 
   it('a row of all spaces produces an empty string', () => {
@@ -743,7 +745,7 @@ describe('buildPlainText — trailing spaces trimmed (task 43)', () => {
 
     // Assert
     expect(lines[7]).toBe('  AB');
-    expect(lines[7].endsWith(' ')).toBe(false);
+    expect(lines[7]?.endsWith(' ')).toBe(false);
   });
 
   it('composePage plainText lines have trailing spaces trimmed', () => {
