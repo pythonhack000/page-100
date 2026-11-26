@@ -10,6 +10,7 @@
  */
 
 import type { TuneDetail } from './crt.ts';
+import { showHijack, type HijackKind } from './hijack.ts';
 
 const HAUNTED_PAGE = 666;
 const SLIP_MIN_MS = 2600;
@@ -46,17 +47,41 @@ function unmountGhost(): void {
   ghost = null;
 }
 
+function slip(host: HTMLElement): void {
+  host.classList.add('is-slipping');
+  ghost?.classList.add('is-flashing');
+  window.setTimeout(() => ghost?.classList.remove('is-flashing'), GHOST_FLASH_MS);
+  window.setTimeout(() => host.classList.remove('is-slipping'), SLIP_MS);
+  window.dispatchEvent(new CustomEvent('tv:slip'));
+}
+
+/** Every other slip is preceded by an intrusion: a face, then a message. */
+function intrusionFor(count: number): HijackKind | null {
+  if (count % 2 === 1) return null;
+  return count % 4 === 0 ? 'message' : 'flash';
+}
+
+let slipCount = 0;
+
 function scheduleSlip(): void {
   slipTimer = window.setTimeout(() => {
     const host = glass();
-    if (host !== null) {
-      host.classList.add('is-slipping');
-      ghost?.classList.add('is-flashing');
-      window.setTimeout(() => ghost?.classList.remove('is-flashing'), GHOST_FLASH_MS);
-      window.setTimeout(() => host.classList.remove('is-slipping'), SLIP_MS);
-      window.dispatchEvent(new CustomEvent('tv:slip'));
+    slipCount += 1;
+    const intrusion = intrusionFor(slipCount);
+    if (host === null) {
+      scheduleSlip();
+      return;
     }
-    scheduleSlip();
+    if (intrusion === null) {
+      slip(host);
+      scheduleSlip();
+      return;
+    }
+    void showHijack(host, intrusion).then(() => {
+      if (document.documentElement.dataset['haunted'] !== 'true') return;
+      slip(host);
+      scheduleSlip();
+    });
   }, randomBetween(SLIP_MIN_MS, SLIP_MAX_MS));
 }
 
@@ -65,6 +90,7 @@ function enter(previous: HTMLElement | null): void {
   document.documentElement.dataset['haunted'] = 'true';
   window.dispatchEvent(new CustomEvent('tv:haunt', { detail: true }));
   mountGhost(previous);
+  slipCount = 0;
   if (!reducedMotion.matches) scheduleSlip();
 }
 

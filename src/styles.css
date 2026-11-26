@@ -30,7 +30,7 @@
   --rubber-text: #b9b5ad;
   --led: #ff2a1a;
 
-  --glass-radius: 7% / 9%;
+  --glass-radius: 9% / 12%;
   --tune-ms: 170ms;
 
   color-scheme: dark;
@@ -108,6 +108,9 @@ body {
 }
 
 .tv__set {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
   width: min(100%, 960px, calc((100dvh - 260px) * 4 / 3 + 72px));
   min-width: min(100%, 300px);
   padding: clamp(14px, 3.2%, 34px) clamp(14px, 3.2%, 34px) 0;
@@ -128,11 +131,13 @@ body {
   overflow: hidden;
   border-radius: var(--glass-radius);
   background: #020302;
-  /* The recess the tube sits in. */
+  /* The recess the tube sits in, and the bulge of the glass. */
   box-shadow:
-    0 0 0 3px #080808,
-    0 0 0 5px #2d2c2a,
-    inset 0 0 40px rgb(0 0 0 / 0.9);
+    0 0 0 3px #060606,
+    0 0 0 6px #2d2c2a,
+    0 0 0 7px #3b3a37,
+    inset 0 0 60px 6px rgb(0 0 0 / 0.95),
+    inset 0 0 2px 1px rgb(255 255 255 / 0.08);
 }
 
 .tt-host {
@@ -150,6 +155,12 @@ body {
   display: flex;
   justify-content: center;
   align-items: flex-start;
+}
+
+.tv__scanlines,
+.tv__vignette,
+.tv__glare {
+  z-index: 6;
 }
 
 .tv__static,
@@ -184,7 +195,14 @@ body {
 }
 
 .tv__scanlines {
-  background: repeating-linear-gradient(
+  background:
+    repeating-linear-gradient(
+      90deg,
+      rgb(255 40 40 / 0.07) 0 1px,
+      rgb(40 255 40 / 0.07) 1px 2px,
+      rgb(60 60 255 / 0.07) 2px 3px
+    ),
+    repeating-linear-gradient(
     to bottom,
     rgb(0 0 0 / 0) 0,
     rgb(0 0 0 / 0) 3px,
@@ -210,8 +228,9 @@ body {
 /* Reflection on the curved glass. */
 .tv__glare {
   background:
-    radial-gradient(ellipse 60% 38% at 22% 8%, rgb(255 255 255 / 0.09), transparent 70%),
-    linear-gradient(160deg, rgb(255 255 255 / 0.035) 0%, transparent 35%);
+    radial-gradient(ellipse 70% 30% at 30% 4%, rgb(255 255 255 / 0.13), transparent 70%),
+    radial-gradient(ellipse 120% 90% at 50% 50%, transparent 62%, rgb(255 255 255 / 0.05) 66%, transparent 72%),
+    linear-gradient(160deg, rgb(255 255 255 / 0.05) 0%, transparent 30%);
 }
 
 /* Power on: a bright line that opens into the picture. */
@@ -227,6 +246,7 @@ body {
 }
 
 .tv__chin {
+  grid-column: 1 / -1;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -262,7 +282,12 @@ body {
   font-family: "Bedstead", "Courier New", monospace;
   font-size: 20px;
   line-height: var(--cell-h);
-  text-shadow: 0 0 3px color-mix(in srgb, currentColor 70%, transparent), 0 0 14px color-mix(in srgb, currentColor 30%, transparent);
+  /* Bloom plus a little convergence error, like a real tube. */
+  text-shadow:
+    -0.7px 0 0 rgb(255 0 80 / 0.55),
+    0.7px 0 0 rgb(0 170 255 / 0.55),
+    0 0 3px color-mix(in srgb, currentColor 70%, transparent),
+    0 0 14px color-mix(in srgb, currentColor 30%, transparent);
 }
 
 .tt-row {
@@ -318,6 +343,161 @@ body {
   overflow: hidden;
   clip-path: inset(100%);
   white-space: pre;
+}
+
+.tv__panel {
+  display: none;
+}
+
+/* Wide enough: an 80s set with its controls down the right side. */
+@media (min-width: 900px) {
+  .tv__set {
+    grid-template-columns: minmax(0, 1fr) 96px;
+    column-gap: 22px;
+  }
+  .tv__panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    padding: 8px 0;
+  }
+  .tv__plate {
+    padding: 4px 8px;
+    border-radius: 3px;
+    background: linear-gradient(180deg, #3a3936, #24231f);
+    color: #9d988e;
+    font: 600 10px/1 system-ui, sans-serif;
+    letter-spacing: 0.12em;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08);
+  }
+  .tv__knob {
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    background:
+      repeating-conic-gradient(from 0deg, #2c2b28 0 6deg, #1c1b19 6deg 12deg),
+      #222;
+    box-shadow:
+      inset 0 0 0 7px #2f2e2b,
+      inset 0 2px 1px 7px rgb(255 255 255 / 0.06),
+      0 4px 8px rgb(0 0 0 / 0.6);
+    position: relative;
+  }
+  .tv__knob::after {
+    content: "";
+    position: absolute;
+    top: 9px;
+    left: 50%;
+    width: 3px;
+    height: 12px;
+    border-radius: 2px;
+    background: #c9c3b6;
+    transform: translateX(-50%);
+  }
+  .tv__knob--small {
+    width: 40px;
+    height: 40px;
+    transform: rotate(130deg);
+  }
+  .tv__buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .tv__buttons i {
+    width: 26px;
+    height: 12px;
+    border-radius: 2px;
+    background: linear-gradient(180deg, #3d3c39, #1f1e1c);
+    box-shadow: 0 2px 0 #0b0b0a;
+  }
+  .tv__grille--side {
+    flex: 1;
+    width: 100%;
+    min-height: 60px;
+    background: repeating-linear-gradient(180deg, #0b0b0b 0 3px, transparent 3px 7px);
+  }
+}
+
+/* The table the set stands on, catching the light of the screen. */
+.tv__set::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: calc(100% - 4px);
+  left: -60vw;
+  right: -60vw;
+  height: 60vh;
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.06) 0 1px, transparent 1px),
+    linear-gradient(180deg, #17120d, #0b0907 60%, #050403);
+}
+
+.tv__set::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: 100%;
+  left: 8%;
+  right: 8%;
+  height: 90px;
+  border-radius: 50%;
+  background: rgb(var(--ambient) / 0.28);
+  filter: blur(28px);
+  transition: background-color 700ms ease;
+}
+
+[data-haunted="true"] .tv__set::after {
+  background: rgb(200 0 0 / 0.4);
+}
+
+/* ---------- Broadcast intrusion (page 666) ---------- */
+
+.tv__hijack {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  background: #000;
+  pointer-events: none;
+}
+
+.tv__hijack-face {
+  display: grid;
+  grid-template-columns: repeat(20, 1fr);
+  width: 64%;
+  aspect-ratio: 20 / 16;
+  opacity: 0.88;
+  filter: blur(0.7px) contrast(1.5) drop-shadow(0 0 14px rgb(255 255 255 / 0.35));
+  transform: translateY(6%) scale(1.12) skewX(-3deg);
+}
+
+.tv__hijack-face .is-lit {
+  background: #cfcfcf;
+}
+
+/* Snow and a sick red cast behind the face, so it seems to come through the noise. */
+.tv__hijack--flash {
+  background:
+    repeating-linear-gradient(0deg, rgb(255 255 255 / 0.06) 0 1px, transparent 1px 3px),
+    radial-gradient(ellipse at center, #2a0505, #000 72%);
+}
+
+.tv__hijack-line {
+  margin: 0;
+  padding: 0 8%;
+  font: 400 clamp(16px, 3.4vw, 34px)/1.3 "Bedstead", monospace;
+  color: #ff2020;
+  text-align: center;
+  text-shadow: 0 0 10px rgb(255 0 0 / 0.8), -1px 0 0 rgb(0 200 255 / 0.5);
+  animation: hijack-type 1.6s steps(24) both;
+}
+
+@keyframes hijack-type {
+  from { clip-path: inset(0 100% 0 0); }
+  to { clip-path: inset(0 0 0 0); }
 }
 
 /* ---------- Remote ---------- */
@@ -484,6 +664,7 @@ body {
   [data-haunted="true"] .room__wall,
   [data-haunted="true"] .tv__led,
   .tv__ghost,
+  .tv__hijack-line,
   .tv__vignette,
   .is-powered .tt-host,
   .tv__glass.is-tuning .tt-host {
