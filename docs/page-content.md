@@ -252,7 +252,7 @@ Fastext: red 100 Index
 
 ## 888 About
 
-Page weight counter is real: sizes come from public/data/weights.json written by the data build (bytes per page JSON). Each line Green if under 2048 bytes, Red if over.
+Page weight counter is real: sizes come from public/data/weights.json written by the data build (bytes per page JSON). Each line Green if under 2048 bytes, Red if over. Row 20 is concealed: REVEAL (`?`) shows 'CALL THE STATION: 777'. Page 777 is a one-screen card that opens the Answering Machine call page (the second Kiroween entry) in a new tab after a 3 s 'dialling...' animation. The URL comes from one constant so it can be filled in once that site is live.
 
 ```
 01 |ABOUT  888                              | Yellow (double-height)
@@ -275,7 +275,7 @@ Page weight counter is real: sizes come from public/data/weights.json written by
 18 |Open source, MIT licence.               | White
 19 |Built with Kiro.                        | Magenta
 20 |                                        | 
-21 |                                        | 
+21 |[concealed] CALL THE STATION: 777       | Black
 22 |                                        |
 ```
 
