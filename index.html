@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content="Page 100: teletext, resurrected. News, weather and exchange rates on 40 x 24 coloured blocks, about 1 KB a page." />
+    <meta name="theme-color" content="#000000" />
+    <title>Page 100</title>
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <main class="tv">
+      <div class="tv__glass">
+        <div id="screen" class="tt-host"></div>
+        <div class="tv__scanlines" aria-hidden="true"></div>
+        <div class="tv__vignette" aria-hidden="true"></div>
+      </div>
+
+      <div id="plaintext" class="tt-plaintext" aria-live="polite" aria-label="Page content"></div>
+
+      <nav class="remote" aria-label="Remote control">
+        <div class="remote__digits">
+          <button type="button" data-key="1">1</button>
+          <button type="button" data-key="2">2</button>
+          <button type="button" data-key="3">3</button>
+          <button type="button" data-key="4">4</button>
+          <button type="button" data-key="5">5</button>
+          <button type="button" data-key="6">6</button>
+          <button type="button" data-key="7">7</button>
+          <button type="button" data-key="8">8</button>
+          <button type="button" data-key="9">9</button>
+          <button type="button" data-nav="prev" aria-label="Previous page">&lsaquo;</button>
+          <button type="button" data-key="0">0</button>
+          <button type="button" data-nav="next" aria-label="Next page">&rsaquo;</button>
+        </div>
+        <div class="remote__fastext">
+          <button type="button" data-fastext="red" aria-label="Red link"></button>
+          <button type="button" data-fastext="green" aria-label="Green link"></button>
+          <button type="button" data-fastext="yellow" aria-label="Yellow link"></button>
+          <button type="button" data-fastext="cyan" aria-label="Cyan link"></button>
+        </div>
+      </nav>
+    </main>
+
+    <noscript>Page 100 needs JavaScript to tune in.</noscript>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

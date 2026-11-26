@@ -1,0 +1,236 @@
+/* Page 100: screen, teletext cells and the remote.
+   Cell geometry follows .kiro/specs/teletext-renderer/design.md:
+   12 x 20 px cells, 40 x 24 grid, 480 x 480 px screen scaled by main.ts. */
+
+:root {
+  --tt-black: #000000;
+  --tt-red: #ff0000;
+  --tt-green: #00ff00;
+  --tt-yellow: #ffff00;
+  --tt-blue: #0000ff;
+  --tt-magenta: #ff00ff;
+  --tt-cyan: #00ffff;
+  --tt-white: #ffffff;
+
+  --cell-w: 12px;
+  --cell-h: 20px;
+  --screen-size: 480px;
+
+  --bezel: #121212;
+  --bezel-edge: #262626;
+  --button: #1c1c1c;
+  --button-text: #d8d8d8;
+  --button-pressed: #2a2a2a;
+
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: #000;
+  color: var(--tt-white);
+}
+
+body {
+  font-family: "Courier New", Courier, monospace;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ---------- TV ---------- */
+
+.tv {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 16px;
+}
+
+.tv__glass {
+  position: relative;
+  width: min(100%, 720px);
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border-radius: 18px;
+  background: #000;
+  box-shadow:
+    0 0 0 10px var(--bezel),
+    0 0 0 11px var(--bezel-edge),
+    0 24px 60px rgba(0, 0, 0, 0.8);
+}
+
+.tt-host {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.tv__scanlines,
+.tv__vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.tv__scanlines {
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0) 0,
+    rgba(0, 0, 0, 0) 2px,
+    rgba(0, 0, 0, 0.28) 3px,
+    rgba(0, 0, 0, 0) 4px
+  );
+  mix-blend-mode: multiply;
+}
+
+.tv__vignette {
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 60%, rgba(0, 0, 0, 0.55) 100%);
+  animation: tv-flicker 6s steps(1) infinite;
+}
+
+@keyframes tv-flicker {
+  0%, 96%, 100% { opacity: 1; }
+  97% { opacity: 0.85; }
+  98% { opacity: 1; }
+  99% { opacity: 0.9; }
+}
+
+/* ---------- Teletext grid ---------- */
+
+.tt-screen {
+  width: var(--screen-size);
+  height: var(--screen-size);
+  display: grid;
+  grid-template-rows: repeat(24, var(--cell-h));
+  background: var(--tt-black);
+  transform-origin: top center;
+  font-size: 18px;
+  line-height: var(--cell-h);
+  text-shadow: 0 0 4px currentColor;
+}
+
+.tt-row {
+  display: grid;
+  grid-template-columns: repeat(40, var(--cell-w));
+  height: var(--cell-h);
+}
+
+.tt-cell {
+  width: var(--cell-w);
+  height: var(--cell-h);
+  overflow: visible;
+  text-align: center;
+  white-space: pre;
+}
+
+.tt-dh-top {
+  transform: scaleY(2) translateY(25%);
+  transform-origin: top;
+}
+
+.tt-dh-bottom {
+  visibility: hidden;
+}
+
+.tt-mosaic {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr;
+  text-shadow: none;
+}
+
+.tt-six {
+  background: var(--tt-bg);
+}
+
+.tt-six--on {
+  background: var(--tt-fg);
+  box-shadow: 0 0 3px var(--tt-fg);
+}
+
+/* Screen-reader copy of the page: hidden visually, still announced. */
+.tt-plaintext {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(100%);
+  white-space: pre;
+}
+
+/* ---------- Remote ---------- */
+
+.remote {
+  width: min(100%, 320px);
+  display: grid;
+  gap: 12px;
+}
+
+.remote__digits {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.remote__fastext {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.remote button {
+  min-height: 44px;
+  border: 1px solid var(--bezel-edge);
+  border-radius: 10px;
+  background: var(--button);
+  color: var(--button-text);
+  font: inherit;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.remote button:active {
+  background: var(--button-pressed);
+  transform: translateY(1px);
+}
+
+.remote button:focus-visible {
+  outline: 2px solid var(--tt-yellow);
+  outline-offset: 2px;
+}
+
+.remote [data-fastext] {
+  min-height: 28px;
+}
+
+.remote [data-fastext="red"] { background: var(--tt-red); }
+.remote [data-fastext="green"] { background: var(--tt-green); }
+.remote [data-fastext="yellow"] { background: var(--tt-yellow); }
+.remote [data-fastext="cyan"] { background: var(--tt-cyan); }
+
+/* Keyboard users on desktop do not need the remote. */
+@media (hover: hover) and (pointer: fine) and (min-width: 900px) {
+  .remote {
+    opacity: 0.55;
+  }
+  .remote:hover,
+  .remote:focus-within {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tv__vignette {
+    animation: none;
+  }
+}
