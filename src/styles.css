@@ -1,6 +1,7 @@
-/* Page 100: screen, teletext cells and the remote.
-   Cell geometry follows .kiro/specs/teletext-renderer/design.md:
-   12 x 20 px cells, 40 x 24 grid, 480 x 480 px screen scaled by main.ts. */
+/* Page 100: a television in a dark room.
+   Cell geometry: 16 x 20 px cells, 40 x 24 grid = 640 x 480 px, a true 4:3
+   picture. main.ts scales it by the shorter side of #screen, so #screen must
+   keep the same 4:3 proportion (it does: the glass is 4:3 and the inset is %). */
 
 :root {
   --tt-black: #000000;
@@ -12,17 +13,33 @@
   --tt-cyan: #00ffff;
   --tt-white: #ffffff;
 
+  /* 12 x 20 px cells make a 480 x 480 grid, exactly like the decoder chip.
+     A real set stretched that picture to 4:3; .tt-host does the same. */
   --cell-w: 12px;
+  --tv-stretch: 1.3334;
   --cell-h: 20px;
-  --screen-size: 480px;
 
-  --bezel: #121212;
-  --bezel-edge: #262626;
-  --button: #1c1c1c;
-  --button-text: #d8d8d8;
-  --button-pressed: #2a2a2a;
+  /* Set by src/fx/crt.ts from the colours on screen. */
+  --ambient: 90 110 140;
+
+  --room: #000000;
+  --plastic: #1d1c1b;
+  --plastic-hi: #2b2a28;
+  --plastic-lo: #0f0e0e;
+  --rubber: #2a2927;
+  --rubber-text: #b9b5ad;
+  --led: #ff2a1a;
+
+  --glass-radius: 7% / 9%;
+  --tune-ms: 170ms;
 
   color-scheme: dark;
+}
+
+@font-face {
+  font-family: "Bedstead";
+  src: url("./assets/fonts/bedstead.otf") format("opentype");
+  font-display: block;
 }
 
 * {
@@ -33,91 +50,219 @@ html,
 body {
   margin: 0;
   min-height: 100%;
-  background: #000;
+  background: var(--room);
   color: var(--tt-white);
 }
 
 body {
   font-family: "Courier New", Courier, monospace;
   -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden;
 }
 
-/* ---------- TV ---------- */
+/* ---------- The room: lit only by the screen ---------- */
+
+.room {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.room__wall,
+.room__floor {
+  position: absolute;
+  left: 50%;
+  border-radius: 50%;
+  background-color: rgb(var(--ambient) / 0.22);
+  transition: background-color 700ms ease;
+  filter: blur(90px);
+}
+
+.room__wall {
+  top: 8vh;
+  width: min(120vw, 1500px);
+  height: 70vh;
+  transform: translateX(-50%);
+}
+
+.room__floor {
+  bottom: -18vh;
+  width: min(90vw, 1100px);
+  height: 34vh;
+  transform: translateX(-50%);
+  background-color: rgb(var(--ambient) / 0.12);
+}
+
+/* ---------- The set ---------- */
 
 .tv {
+  position: relative;
+  z-index: 1;
   min-height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 20px;
-  padding: 16px;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 28px;
+  padding: 24px 16px;
+}
+
+.tv__set {
+  width: min(100%, 960px, calc((100dvh - 260px) * 4 / 3 + 72px));
+  min-width: min(100%, 300px);
+  padding: clamp(14px, 3.2%, 34px) clamp(14px, 3.2%, 34px) 0;
+  border-radius: 28px 28px 34px 34px;
+  background:
+    linear-gradient(180deg, var(--plastic-hi) 0%, var(--plastic) 18%, var(--plastic) 82%, var(--plastic-lo) 100%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.06),
+    inset 0 -2px 0 rgb(0 0 0 / 0.6),
+    0 40px 80px -20px rgb(0 0 0 / 0.9),
+    0 0 120px -30px rgb(var(--ambient) / 0.35);
+  transition: box-shadow 700ms ease;
 }
 
 .tv__glass {
   position: relative;
-  width: min(100%, 720px);
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 4 / 3;
   overflow: hidden;
-  border-radius: 18px;
-  background: #000;
+  border-radius: var(--glass-radius);
+  background: #020302;
+  /* The recess the tube sits in. */
   box-shadow:
-    0 0 0 10px var(--bezel),
-    0 0 0 11px var(--bezel-edge),
-    0 24px 60px rgba(0, 0, 0, 0.8);
+    0 0 0 3px #080808,
+    0 0 0 5px #2d2c2a,
+    inset 0 0 40px rgb(0 0 0 / 0.9);
 }
 
 .tt-host {
   position: absolute;
-  /* Overscan margin so the rounded glass never clips the outer columns. */
-  inset: 4%;
+  /* Square box (main.ts scales the 480 x 480 grid to its shorter side),
+     stretched 4:3 to fill the glass. */
+  top: 7%;
+  bottom: 7%;
+  left: 50%;
+  aspect-ratio: 1 / 1;
+  /* Size comes from the glass only, never from the 480 px grid inside. */
+  contain: size;
+  translate: -50% 0;
+  transform: scaleX(var(--tv-stretch));
   display: flex;
   justify-content: center;
   align-items: flex-start;
 }
 
+.tv__static,
 .tv__scanlines,
-.tv__vignette {
+.tv__vignette,
+.tv__glare {
   position: absolute;
   inset: 0;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
+}
+
+.tv__static {
+  opacity: 0;
+  image-rendering: pixelated;
+  mix-blend-mode: screen;
+}
+
+.tv__glass.is-tuning .tv__static {
+  opacity: 0.85;
+}
+
+.tv__glass.is-tuning .tt-host {
+  animation: tv-roll var(--tune-ms) steps(4) both;
+}
+
+@keyframes tv-roll {
+  0% { transform: scaleX(var(--tv-stretch)) translateY(0); filter: brightness(1.6) contrast(1.4); }
+  50% { transform: scaleX(var(--tv-stretch)) translateY(-6%); filter: brightness(2.2); }
+  100% { transform: scaleX(var(--tv-stretch)) translateY(0); filter: none; }
 }
 
 .tv__scanlines {
   background: repeating-linear-gradient(
     to bottom,
-    rgba(0, 0, 0, 0) 0,
-    rgba(0, 0, 0, 0) 2px,
-    rgba(0, 0, 0, 0.28) 3px,
-    rgba(0, 0, 0, 0) 4px
+    rgb(0 0 0 / 0) 0,
+    rgb(0 0 0 / 0) 3px,
+    rgb(0 0 0 / 0.14) 4px
   );
-  mix-blend-mode: multiply;
 }
 
+/* Tube curvature: darker corners, a faint bulge of light in the middle. */
 .tv__vignette {
-  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 60%, rgba(0, 0, 0, 0.55) 100%);
-  animation: tv-flicker 6s steps(1) infinite;
+  background:
+    radial-gradient(ellipse 75% 70% at 50% 50%, rgb(255 255 255 / 0.025), transparent 70%),
+    radial-gradient(ellipse at center, transparent 58%, rgb(0 0 0 / 0.7) 100%);
+  animation: tv-flicker 7s steps(1) infinite;
 }
 
 @keyframes tv-flicker {
-  0%, 96%, 100% { opacity: 1; }
-  97% { opacity: 0.85; }
-  98% { opacity: 1; }
-  99% { opacity: 0.9; }
+  0%, 95%, 100% { opacity: 1; }
+  96% { opacity: 0.8; }
+  97% { opacity: 1; }
+  98% { opacity: 0.88; }
+}
+
+/* Reflection on the curved glass. */
+.tv__glare {
+  background:
+    radial-gradient(ellipse 60% 38% at 22% 8%, rgb(255 255 255 / 0.09), transparent 70%),
+    linear-gradient(160deg, rgb(255 255 255 / 0.035) 0%, transparent 35%);
+}
+
+/* Power on: a bright line that opens into the picture. */
+.is-powered .tt-host {
+  animation: crt-on 900ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes crt-on {
+  0% { transform: scale(0.03, 0.004); filter: brightness(8); }
+  30% { transform: scale(var(--tv-stretch), 0.006); filter: brightness(6); }
+  62% { transform: scale(var(--tv-stretch), 1.04); filter: brightness(2.2); }
+  100% { transform: scale(var(--tv-stretch), 1); filter: none; }
+}
+
+.tv__chin {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: clamp(28px, 4.5vw, 48px);
+  padding: 0 6px;
+}
+
+.tv__led {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--led);
+  box-shadow: 0 0 6px var(--led), 0 0 14px rgb(255 42 26 / 0.6);
+}
+
+.tv__grille {
+  width: 28%;
+  height: 12px;
+  background: repeating-linear-gradient(90deg, #0b0b0b 0 3px, transparent 3px 7px);
+  opacity: 0.9;
 }
 
 /* ---------- Teletext grid ---------- */
 
 .tt-screen {
-  width: var(--screen-size);
-  height: var(--screen-size);
+  flex: none;
+  width: calc(40 * var(--cell-w));
+  height: calc(24 * var(--cell-h));
   display: grid;
   grid-template-rows: repeat(24, var(--cell-h));
   background: var(--tt-black);
   transform-origin: top center;
-  font-size: 18px;
+  font-family: "Bedstead", "Courier New", monospace;
+  font-size: 20px;
   line-height: var(--cell-h);
-  text-shadow: 0 0 4px currentColor;
+  text-shadow: 0 0 3px color-mix(in srgb, currentColor 70%, transparent), 0 0 14px color-mix(in srgb, currentColor 30%, transparent);
 }
 
 .tt-row {
@@ -135,8 +280,14 @@ body {
 }
 
 .tt-dh-top {
-  transform: scaleY(2) translateY(25%);
+  transform: scaleY(2);
   transform-origin: top;
+}
+
+/* Black cell backgrounds are the tube itself: let the glow of the
+   neighbouring glyph through instead of boxing it in. */
+.tt-cell[style*="background-color: var(--tt-black)"] {
+  background-color: transparent !important;
 }
 
 .tt-dh-bottom {
@@ -172,15 +323,22 @@ body {
 /* ---------- Remote ---------- */
 
 .remote {
-  width: min(100%, 320px);
+  width: min(100%, 300px);
   display: grid;
-  gap: 12px;
+  gap: 14px;
+  padding: 18px 18px 22px;
+  border-radius: 26px;
+  background: linear-gradient(180deg, #252422, #161514);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.07),
+    0 24px 40px -18px rgb(0 0 0 / 0.95),
+    0 0 60px -20px rgb(var(--ambient) / 0.3);
 }
 
 .remote__digits {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  gap: 10px;
 }
 
 .remote__fastext {
@@ -191,47 +349,74 @@ body {
 
 .remote button {
   min-height: 44px;
-  border: 1px solid var(--bezel-edge);
-  border-radius: 10px;
-  background: var(--button);
-  color: var(--button-text);
-  font: inherit;
-  font-size: 18px;
+  border: 0;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #343230, var(--rubber));
+  color: var(--rubber-text);
+  font: 600 18px/1 system-ui, sans-serif;
   cursor: pointer;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.08),
+    0 3px 0 #0c0c0b,
+    0 4px 8px rgb(0 0 0 / 0.5);
+  transition: transform 80ms ease, box-shadow 80ms ease, filter 120ms ease;
+}
+
+.remote button:hover {
+  filter: brightness(1.15);
 }
 
 .remote button:active {
-  background: var(--button-pressed);
-  transform: translateY(1px);
+  transform: translateY(2px);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.05),
+    0 1px 0 #0c0c0b,
+    0 1px 3px rgb(0 0 0 / 0.5);
 }
 
 .remote button:focus-visible {
   outline: 2px solid var(--tt-yellow);
-  outline-offset: 2px;
+  outline-offset: 3px;
 }
 
 .remote [data-fastext] {
-  min-height: 28px;
+  min-height: 44px;
+  border-radius: 22px;
 }
 
-.remote [data-fastext="red"] { background: var(--tt-red); }
-.remote [data-fastext="green"] { background: var(--tt-green); }
-.remote [data-fastext="yellow"] { background: var(--tt-yellow); }
-.remote [data-fastext="cyan"] { background: var(--tt-cyan); }
+.remote [data-fastext="red"] { background: linear-gradient(180deg, #ff4a3d, #c41208); }
+.remote [data-fastext="green"] { background: linear-gradient(180deg, #4fe05a, #13931f); }
+.remote [data-fastext="yellow"] { background: linear-gradient(180deg, #ffe94d, #c9a800); }
+.remote [data-fastext="cyan"] { background: linear-gradient(180deg, #5ce8f0, #0e9aa6); }
 
-/* Keyboard users on desktop do not need the remote. */
-@media (hover: hover) and (pointer: fine) and (min-width: 900px) {
-  .remote {
-    opacity: 0.55;
+/* Wide screens: the remote lies on the table beside the set. */
+@media (min-width: 1180px) {
+  .tv {
+    grid-template-columns: minmax(0, 960px) 240px;
+    align-items: end;
+    justify-content: center;
+    column-gap: 56px;
   }
-  .remote:hover,
-  .remote:focus-within {
-    opacity: 1;
+  .tv__set {
+    width: min(100%, calc((100dvh - 120px) * 4 / 3 + 72px));
+    justify-self: end;
+  }
+  .remote {
+    width: 240px;
+    transform: rotate(-6deg);
+    margin-bottom: 8px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .tv__vignette {
+  .tv__vignette,
+  .is-powered .tt-host,
+  .tv__glass.is-tuning .tt-host {
     animation: none;
+  }
+  .room__wall,
+  .room__floor,
+  .tv__set {
+    transition: none;
   }
 }

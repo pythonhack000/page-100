@@ -280,3 +280,6 @@ Page weight counter is real: sizes come from public/data/weights.json written by
 ```
 
 Fastext: red 100 Index, green 101 News, yellow 666 ???, cyan 500 Rates
+
+## Known renderer bug for Kiro (found 2026-11-26 in a real browser)
+Navigate 100 -> 400 (not found) -> 100: the mosaic band on row 3 is gone. `applyCell` writes `span.textContent = cell.char` for a text cell, which deletes the six `.tt-six` children of a cell that was a mosaic before. `MountedCell.sixSpans` still points at the detached spans, so going back to a mosaic toggles elements that are no longer in the DOM. Fix: when a cell turns from mosaic to text, reset `sixSpans` to null (or rebuild if the children are detached), and add a test that renders mosaic -> text -> mosaic on the same cell.

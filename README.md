@@ -45,3 +45,7 @@ The `.kiro/` directory holds the project's steering files (product, tech, struct
 ## Licence
 
 MIT. See [LICENSE](LICENSE).
+
+## Credits
+
+The teletext typeface is [Bedstead](https://bjh21.me.uk/bedstead/) by bjh21, public domain (CC0), bundled in `src/assets/fonts/`.
