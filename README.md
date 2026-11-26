@@ -6,6 +6,12 @@ Type a three-digit page number like on an old TV remote. Use the coloured Fastex
 
 > Kiroween 2026 entry. Work in progress.
 
+## Why teletext, why now
+
+Page 100 was built in Dushanbe, Tajikistan. Here, a lot of people still read the news on prepaid mobile data, often on slow networks outside the cities. A modern news site can weigh several megabytes before you read a single headline. A teletext page carries the same headlines in about one kilobyte of text.
+
+That's why Page 100 defaults to what people here check every morning: the somoni exchange rate, the weather in Dushanbe and the headlines. Teletext solved the "news on a thin pipe" problem forty years ago. Page 100 brings that answer back for the places where the pipe is still thin.
+
 ## Pages
 
 | Page | What's on it |

@@ -2,6 +2,37 @@
 
 Content mockups for every page, rows 1-22 (row 0 is the header, row 23 is Fastext). Each row is at most 40 characters. `DH` = double-height (takes two rows). `~` = a note about mosaic graphics, not literal text. Example data values are placeholders; live values come from the data build.
 
+## 100 Index (with a TODAY strip)
+
+The index opens with a TODAY strip so the first screen already answers the morning questions without a single keypress: USD to somoni and the weather in Dushanbe. Values come from the same p400/p500 JSON (two small fetches). If the data is missing, the strip shows 'no signal' in Red instead of breaking the page.
+
+```
+01 |PAGE 100                                | Cyan (double-height)
+02 |(bottom half)                           |
+03 |~mosaic band, Cyan/Yellow               | Cyan
+04 |                                        | 
+05 |TODAY  DUSHANBE        +7C  clear       | Yellow
+06 |       1 USD = 10.94 TJS  up            | Yellow
+07 |                                        | 
+08 |CONTENTS                                | White
+09 |                                        | 
+10 |101  News headlines                     | Red
+11 |400  Weather                            | Green
+12 |500  Exchange rates                     | Yellow
+13 |666  ???                                | Magenta
+14 |888  About                              | Cyan
+15 |                                        | 
+16 |                                        | 
+17 |About 1 KB a page. Works on 2G.         | Green
+18 |                                        |
+19 |                                        |
+20 |                                        |
+21 |                                        |
+22 |                                        |
+```
+
+Fastext: red 101 News, green 400 Wthr, yellow 500 Rates, cyan 888 About
+
 ## 101 News headlines (template for 101-109, subpages 1/N)
 
 Data: public/data/p101.json. One feed per page 101-109. Subpage = 4 headlines. Headline wraps to max 3 lines, word-wrapped, never cut mid-word.
