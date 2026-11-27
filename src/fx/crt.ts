@@ -146,6 +146,12 @@ function isHeaderMutation(record: MutationRecord): boolean {
   return node?.closest('[data-row="0"]') != null;
 }
 
+/** Cells the effects rewrite themselves carry data-fx; that is not a page change. */
+function isEffectMutation(record: MutationRecord): boolean {
+  const node = record.target instanceof Element ? record.target : record.target.parentElement;
+  return node?.closest('[data-fx]') != null;
+}
+
 function start(): void {
   const screen = document.getElementById('screen');
   const glass = document.querySelector<HTMLElement>('.tv__glass');
@@ -171,7 +177,7 @@ function start(): void {
   };
 
   const observer = new MutationObserver((records) => {
-    if (records.some((record) => !isHeaderMutation(record))) onPageChange();
+    if (records.some((record) => !isHeaderMutation(record) && !isEffectMutation(record))) onPageChange();
   });
   observer.observe(screen, {
     subtree: true,

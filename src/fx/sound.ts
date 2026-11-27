@@ -11,10 +11,13 @@
  * - Remote: a dull relay "chunk" per button.
  * - Page 666: a detuned drone that breathes, a dissonant broadcast tone when
  *   the picture slips, and a hard cut to silence during a hijack frame.
+ *   The scripted sequence's own sounds live in horror-sound.ts.
  * Browsers only allow audio after a user gesture, so nothing plays before
  * the first key or tap. The Sound key on the remote mutes it; the choice is
  * remembered in localStorage when storage is available.
  */
+
+import { onCue } from './cues.ts';
 
 const STORAGE_KEY = 'page100.sound';
 const MASTER_GAIN = 0.8;
@@ -24,7 +27,7 @@ const DRONE_GAIN = 0.16;
 const HIJACK_FLASH_SECONDS = 0.14;
 const HIJACK_MESSAGE_SECONDS = 1.7;
 
-interface Bus {
+export interface Bus {
   readonly ctx: AudioContext;
   /** Dry input: saturation, then the speakers and the reverb send. */
   readonly input: GainNode;
@@ -114,13 +117,13 @@ function createBus(): Bus | null {
   return { ctx, input, master, noise: noiseBuffer(ctx, 2) };
 }
 
-function envelope(param: AudioParam, at: number, peak: number, attack: number, release: number): void {
+export function envelope(param: AudioParam, at: number, peak: number, attack: number, release: number): void {
   param.setValueAtTime(0.0001, at);
   param.exponentialRampToValueAtTime(peak, at + attack);
   param.exponentialRampToValueAtTime(0.0001, at + attack + release);
 }
 
-function noiseSource(b: Bus, offset = Math.random()): AudioBufferSourceNode {
+export function noiseSource(b: Bus, offset = Math.random()): AudioBufferSourceNode {
   const source = b.ctx.createBufferSource();
   source.buffer = b.noise;
   source.loop = true;
@@ -178,7 +181,7 @@ function degauss(b: Bus): void {
 }
 
 /** TV snow through a small speaker: band-limited, crackly, loud. */
-function snow(b: Bus, seconds: number, peak: number): void {
+export function snow(b: Bus, seconds: number, peak: number): void {
   const { ctx } = b;
   const now = ctx.currentTime;
   const source = noiseSource(b);
@@ -344,6 +347,11 @@ function onFirstGesture(): void {
   if (document.documentElement.dataset['haunted'] === 'true') startDrone(bus);
 }
 
+/** The shared audio graph, or null before the first gesture. */
+export function getBus(): Bus | null {
+  return bus;
+}
+
 function withBus(play: (b: Bus) => void): () => void {
   return () => {
     if (bus !== null) play(bus);
@@ -381,6 +389,11 @@ function start(): void {
   window.addEventListener('tv:haunt', (event) => {
     if ((event as CustomEvent<boolean>).detail) withBus(startDrone)();
     else stopDrone();
+  });
+  // The scripted sequence owns the silence: the hum dies with the picture.
+  onCue((name) => {
+    if (name === 'dead-air') stopDrone();
+    if (name === 'release' && document.documentElement.dataset['haunted'] === 'true') withBus(startDrone)();
   });
 }
 

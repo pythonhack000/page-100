@@ -29,8 +29,8 @@ const COLUMNS = 20;
 const ROWS = FACE.length;
 /** Centre of each eye socket, in block units. */
 const SOCKETS = [
-  { x: 5.5, y: 6.5 },
-  { x: 14.5, y: 6.5 },
+  { x: 7, y: 6.5 },
+  { x: 13, y: 6.5 },
 ] as const;
 /** How far a pupil may travel inside its socket, in blocks. */
 const PUPIL_REACH = 1.4;

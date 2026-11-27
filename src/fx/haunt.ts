@@ -5,11 +5,13 @@
  * built by Kiro; this module only makes the television misbehave:
  * - the room turns blood red (CSS, via html[data-haunted]),
  * - the picture slips its vertical hold at random moments,
- * - a ghost of the previous page hangs in the glass and flashes up.
+ * - a ghost of the previous page hangs in the glass and flashes up,
+ * - first, once per visit, the scripted sequence in director.ts plays.
  * All of it stops the moment you leave the page.
  */
 
 import type { TuneDetail } from './crt.ts';
+import { startDirector, stopDirector } from './director.ts';
 import { showHijack, type HijackKind } from './hijack.ts';
 
 const HAUNTED_PAGE = 666;
@@ -91,13 +93,18 @@ function enter(previous: HTMLElement | null): void {
   window.dispatchEvent(new CustomEvent('tv:haunt', { detail: true }));
   mountGhost(previous);
   slipCount = 0;
-  if (!reducedMotion.matches) scheduleSlip();
+  if (reducedMotion.matches) return;
+  const host = glass();
+  // The scripted sequence plays once per visit; random haunting follows it.
+  if (host === null) scheduleSlip();
+  else startDirector(host, scheduleSlip);
 }
 
 function leave(): void {
   if (document.documentElement.dataset['haunted'] !== 'true') return;
   delete document.documentElement.dataset['haunted'];
   window.dispatchEvent(new CustomEvent('tv:haunt', { detail: false }));
+  stopDirector();
   if (slipTimer !== null) window.clearTimeout(slipTimer);
   slipTimer = null;
   unmountGhost();

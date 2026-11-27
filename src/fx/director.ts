@@ -81,6 +81,7 @@ function mutateLine(): void {
     const target = MUTATED_LINE[i] ?? ' ';
     later(i * MUTATE_STEP_MS, () => {
       if ((cell.textContent ?? ' ') === target) return;
+      cell.dataset['fx'] = 'mutated';
       cell.textContent = target;
       cell.style.color = 'var(--tt-red)';
       cue('mutate-tick');

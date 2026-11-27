@@ -6,5 +6,6 @@
  */
 
 import './sound.ts';
+import './horror-sound.ts';
 import './haunt.ts';
 import './crt.ts';
