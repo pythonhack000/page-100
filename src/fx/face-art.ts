@@ -77,3 +77,15 @@ export const SOCKETS = [
   { x: 9, y: 10.5 },
   { x: 23, y: 10.5 },
 ] as const;
+
+/** Half-size of an eye socket, in blocks: the area the eyelids cover. */
+const SOCKET_RADIUS = { x: 3.2, y: 2.6 } as const;
+
+/** True when the block at (col, row) lies inside an eye socket. */
+export function isSocketCell(col: number, row: number): boolean {
+  const cx = col + 0.5;
+  const cy = row + 0.5;
+  return SOCKETS.some(
+    (socket) => ((cx - socket.x) / SOCKET_RADIUS.x) ** 2 + ((cy - socket.y) / SOCKET_RADIUS.y) ** 2 < 1,
+  );
+}

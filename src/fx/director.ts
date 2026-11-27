@@ -14,9 +14,8 @@
  *   7. release: the page comes back and normal haunting resumes...
  *   8. ...until, a few seconds later, it shows itself once more.
  *
- * While it watches, it tells you where you are (from the browser's time
- * zone, nothing leaves the page), its grin widens at every drop-out, and
- * the pointer disappears.
+ * While it watches, it blinks, turns its head after the pointer, grins
+ * wider at every drop-out and multiplies in the dark; the pointer is gone.
  *
  * It only reads and decorates the DOM the renderer produced. It never
  * changes navigation state: the trap swallows one input event, that's all.
@@ -47,6 +46,8 @@ const FACE_OPACITY = 0.9;
 const LUNGE_MS = 650;
 const WARNING_MS = 1800;
 const RELEASE_FADE_MS = 900;
+const SWARM_FROM_FLASH = 2;
+const SWARM_MAX = 12;
 const AFTERIMAGE_DELAY_MS = 3200;
 const AFTERIMAGE_MS = 220;
 const AFTERIMAGE_TEXT = 'IT IS STILL HERE  ';
@@ -61,6 +62,7 @@ let clockTimer: number | null = null;
 let counterTimer: number | null = null;
 let flashTimer: number | null = null;
 let afterimage: HTMLElement | null = null;
+let swarm: HTMLElement[] = [];
 let dead: HTMLElement | null = null;
 let face: WatchingFace | null = null;
 let trapArmed = false;
@@ -166,9 +168,32 @@ function startFlashes(glass: HTMLElement): void {
     glass.appendChild(line);
     cue('flash');
     face?.widen();
+    if (index >= SWARM_FROM_FLASH) multiply(glass, 2 ** (index - SWARM_FROM_FLASH + 1));
     index += 1;
     window.setTimeout(() => line.remove(), FLASH_MS);
   }, FLASH_EVERY_MS);
+}
+
+/** Small copies of the face surface in the dark around it. */
+function multiply(glass: HTMLElement, count: number): void {
+  const wanted = Math.min(count, SWARM_MAX) - swarm.length;
+  for (let i = 0; i < wanted; i++) {
+    const mini = buildFaceGrid(Number.MAX_SAFE_INTEGER);
+    mini.classList.add('tv__mini-face');
+    mini.setAttribute('aria-hidden', 'true');
+    const nearEdge = Math.random() < 0.5;
+    mini.style.left = `${nearEdge ? 3 + Math.random() * 14 : 70 + Math.random() * 18}%`;
+    mini.style.top = `${5 + Math.random() * 70}%`;
+    mini.style.width = `${7 + Math.random() * 7}%`;
+    mini.style.animationDelay = `${-Math.random() * 3}s`;
+    glass.appendChild(mini);
+    swarm = [...swarm, mini];
+  }
+}
+
+function clearSwarm(): void {
+  swarm.forEach((mini) => mini.remove());
+  swarm = [];
 }
 
 function stopFlashes(): void {
@@ -176,24 +201,9 @@ function stopFlashes(): void {
   flashTimer = null;
 }
 
-/** "IT IS 19:52 IN DUSHANBE", worked out from the browser's own clock. */
-function whereYouAre(): string {
-  const now = new Date();
-  const time = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-  const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const city = zone.includes('/') ? zone.split('/').pop()?.replace(/_/g, ' ').toUpperCase() : undefined;
-  return city === undefined ? `IT IS ${time} WHERE YOU ARE` : `IT IS ${time} IN ${city}`;
-}
-
 function presence(glass: HTMLElement): void {
   cue('presence');
   document.documentElement.classList.add('is-watched');
-  if (dead !== null) {
-    const where = document.createElement('p');
-    where.className = 'tv__dead-line tv__dead-line--where';
-    where.textContent = whereYouAre();
-    dead.appendChild(where);
-  }
   startFlashes(glass);
   face = mountWatchingFace(glass);
   face.element.style.opacity = '0';
@@ -262,6 +272,7 @@ function scare(glass: HTMLElement): void {
   if (!trapArmed) return;
   trapArmed = false;
   stopFlashes();
+  clearSwarm();
   cue('scream');
   face?.fadeTo(1, 60);
   face?.lunge();
@@ -310,6 +321,7 @@ export function stopDirector(): void {
   counterTimer = null;
   trapArmed = false;
   stopFlashes();
+  clearSwarm();
   document.documentElement.classList.remove('is-watched');
   afterimage?.remove();
   afterimage = null;

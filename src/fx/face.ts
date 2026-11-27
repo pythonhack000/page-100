@@ -1,18 +1,27 @@
 /**
  * src/fx/face.ts
  *
- * Puts the face from face-art.ts on the glass. Its pupils follow the
- * viewer's pointer, and its grin can be stretched one stage at a time.
+ * Puts the face from face-art.ts on the glass. It blinks, its head and
+ * pupils follow the viewer's pointer, and its grin can be stretched one
+ * stage at a time.
  */
 
-import { FACE_COLUMNS, FACE_FRAMES, FACE_ROWS, MOUTH_ROWS, SOCKETS } from './face-art.ts';
+import { FACE_COLUMNS, FACE_FRAMES, FACE_ROWS, MOUTH_ROWS, SOCKETS, isSocketCell } from './face-art.ts';
 
 /** How far a pupil may travel inside its socket, in blocks. */
 const PUPIL_REACH = 1.6;
 const LAST_GRIN = FACE_FRAMES.length - 1;
+const BLINK_MIN_MS = 2200;
+const BLINK_MAX_MS = 5200;
+const BLINK_MS = 170;
+const DOUBLE_BLINK_CHANCE = 0.3;
+/** How far the head turns towards the pointer at the edge of the window. */
+const MAX_TILT_DEG = 9;
+const MAX_TURN_PERCENT = 5;
+const MAX_NOD_PERCENT = 3;
 
-function paint(cell: HTMLElement, pixel: string | undefined): void {
-  cell.className = pixel === '#' ? 'is-lit' : pixel === 'o' ? 'is-dim' : '';
+function paint(cell: HTMLElement, pixel: string | undefined, socket = false): void {
+  cell.className = pixel === '#' ? 'is-lit' : pixel === 'o' ? 'is-dim' : socket ? 'is-socket' : '';
 }
 
 /** The face as a grid of blocks, drawn at grin stage `stage`. */
@@ -21,13 +30,13 @@ export function buildFaceGrid(stage = 0): HTMLElement {
   grid.className = 'tv__face-grid';
   grid.style.gridTemplateColumns = `repeat(${FACE_COLUMNS}, 1fr)`;
   const frame = FACE_FRAMES[Math.min(stage, LAST_GRIN)] ?? [];
-  for (const row of frame) {
-    for (const pixel of row) {
+  frame.forEach((row, y) => {
+    [...row].forEach((pixel, x) => {
       const cell = document.createElement('span');
-      paint(cell, pixel);
+      paint(cell, pixel, isSocketCell(x, y));
       grid.appendChild(cell);
-    }
-  }
+    });
+  });
   return grid;
 }
 
@@ -73,7 +82,26 @@ export function mountWatchingFace(glass: HTMLElement): WatchingFace {
   glass.appendChild(layer);
 
   let stage = 0;
+  let blinkTimer: number | null = null;
+  const blink = (): void => {
+    wrap.classList.add('is-blinking');
+    window.setTimeout(() => wrap.classList.remove('is-blinking'), BLINK_MS);
+  };
+  const scheduleBlink = (): void => {
+    blinkTimer = window.setTimeout(() => {
+      blink();
+      if (Math.random() < DOUBLE_BLINK_CHANCE) window.setTimeout(blink, BLINK_MS * 2);
+      scheduleBlink();
+    }, BLINK_MIN_MS + Math.random() * (BLINK_MAX_MS - BLINK_MIN_MS));
+  };
+  scheduleBlink();
+
   const follow = (event: PointerEvent): void => {
+    const nx = Math.max(-1, Math.min(1, (event.clientX / window.innerWidth) * 2 - 1));
+    const ny = Math.max(-1, Math.min(1, (event.clientY / window.innerHeight) * 2 - 1));
+    wrap.style.setProperty('--tilt', `${nx * MAX_TILT_DEG}deg`);
+    wrap.style.setProperty('--turn', `${nx * MAX_TURN_PERCENT}%`);
+    wrap.style.setProperty('--nod', `${ny * MAX_NOD_PERCENT}%`);
     const box = wrap.getBoundingClientRect();
     const dx = event.clientX - (box.left + box.width / 2);
     const dy = event.clientY - (box.top + box.height / 2);
@@ -103,6 +131,7 @@ export function mountWatchingFace(glass: HTMLElement): WatchingFace {
       layer.classList.add('is-lunging');
     },
     remove() {
+      if (blinkTimer !== null) window.clearTimeout(blinkTimer);
       window.removeEventListener('pointermove', follow);
       layer.remove();
     },

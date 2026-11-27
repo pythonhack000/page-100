@@ -6,7 +6,8 @@
  * - the room turns blood red (CSS, via html[data-haunted]),
  * - the picture slips its vertical hold at random moments,
  * - a ghost of the previous page hangs in the glass and flashes up,
- * - first, once per visit, the scripted sequence in director.ts plays.
+ * - first, once per visit, the scripted sequence in director.ts plays,
+ * - and if you switch to another tab, the tab title calls after you.
  * All of it stops the moment you leave the page.
  */
 
@@ -19,6 +20,7 @@ const SLIP_MIN_MS = 2600;
 const SLIP_MAX_MS = 6400;
 const SLIP_MS = 420;
 const GHOST_FLASH_MS = 140;
+const HIDDEN_TAB_TITLE = 'I CAN STILL SEE YOU';
 
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
@@ -121,4 +123,19 @@ window.addEventListener('tv:settled', (event) => {
   const { page } = (event as CustomEvent<TuneDetail>).detail;
   if (page === HAUNTED_PAGE) enter(pictureBefore);
   else leave();
+});
+
+/** The title the page had before it started calling after the viewer. */
+let calmTitle: string | null = null;
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && document.documentElement.dataset['haunted'] === 'true') {
+    calmTitle = document.title;
+    document.title = HIDDEN_TAB_TITLE;
+    return;
+  }
+  if (!document.hidden && calmTitle !== null) {
+    document.title = calmTitle;
+    calmTitle = null;
+  }
 });
