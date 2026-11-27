@@ -6,7 +6,7 @@
  * stage at a time.
  */
 
-import { FACE_COLUMNS, FACE_FRAMES, FACE_ROWS, MOUTH_ROWS, SOCKETS, isSocketCell } from './face-art.ts';
+import { FACE_COLUMNS, FACE_FRAMES, FACE_ROWS, MOUTH_ROWS, SCREAM_FRAME, SOCKETS, isSocketCell } from './face-art.ts';
 
 /** How far a pupil may travel inside its socket, in blocks. */
 const PUPIL_REACH = 1.6;
@@ -40,10 +40,9 @@ export function buildFaceGrid(stage = 0): HTMLElement {
   return grid;
 }
 
-/** Redraws only the mouth rows of `grid` at grin stage `stage`. */
-function drawGrin(grid: HTMLElement, stage: number): void {
-  const frame = FACE_FRAMES[Math.min(stage, LAST_GRIN)] ?? [];
-  for (const row of MOUTH_ROWS) {
+/** Redraws the lower face (mouth and jaw) of `grid` from `frame`. */
+function drawLowerFace(grid: HTMLElement, frame: readonly string[]): void {
+  for (let row = MOUTH_ROWS[0] ?? 0; row < FACE_ROWS; row++) {
     for (let col = 0; col < FACE_COLUMNS; col++) {
       const cell = grid.children[row * FACE_COLUMNS + col];
       if (cell instanceof HTMLElement) paint(cell, frame[row]?.[col]);
@@ -57,7 +56,9 @@ export interface WatchingFace {
   fadeTo(opacity: number, ms: number): void;
   /** Stretches the grin one stage wider; stops at the widest. */
   widen(): void;
-  /** The jump: the face rushes the glass, grinning as wide as it can. */
+  /** It stops following you, closes its mouth and looks straight at you. */
+  stare(): void;
+  /** The jump: the jaw drops and the face rushes the glass. */
   lunge(): void;
   remove(): void;
 }
@@ -82,6 +83,7 @@ export function mountWatchingFace(glass: HTMLElement): WatchingFace {
   glass.appendChild(layer);
 
   let stage = 0;
+  let staring = false;
   let blinkTimer: number | null = null;
   const blink = (): void => {
     wrap.classList.add('is-blinking');
@@ -97,6 +99,7 @@ export function mountWatchingFace(glass: HTMLElement): WatchingFace {
   scheduleBlink();
 
   const follow = (event: PointerEvent): void => {
+    if (staring) return;
     const nx = Math.max(-1, Math.min(1, (event.clientX / window.innerWidth) * 2 - 1));
     const ny = Math.max(-1, Math.min(1, (event.clientY / window.innerHeight) * 2 - 1));
     wrap.style.setProperty('--tilt', `${nx * MAX_TILT_DEG}deg`);
@@ -123,11 +126,19 @@ export function mountWatchingFace(glass: HTMLElement): WatchingFace {
     widen() {
       if (stage >= LAST_GRIN) return;
       stage += 1;
-      drawGrin(grid, stage);
+      drawLowerFace(grid, FACE_FRAMES[stage] ?? []);
+    },
+    stare() {
+      staring = true;
+      if (blinkTimer !== null) window.clearTimeout(blinkTimer);
+      wrap.classList.remove('is-blinking');
+      ['--tilt', '--turn', '--nod'].forEach((name) => wrap.style.removeProperty(name));
+      pupils.forEach((pupil) => pupil.style.removeProperty('transform'));
+      drawLowerFace(grid, FACE_FRAMES[0] ?? []);
+      layer.classList.add('is-staring');
     },
     lunge() {
-      stage = LAST_GRIN;
-      drawGrin(grid, stage);
+      drawLowerFace(grid, SCREAM_FRAME);
       layer.classList.add('is-lunging');
     },
     remove() {

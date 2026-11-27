@@ -9,11 +9,12 @@
  * - dead-air: room tone and a test tone that slowly dies and bends flat.
  * - presence: a heartbeat that speeds up, and a breathy whisper.
  * - flash: a crack of snow under each subliminal line.
- * - scream: a distorted, formant-shaped shriek inside a blast of snow.
+ * - stare: dead silence, then a breath drawn in just before...
+ * - scream: an impact, a distorted roar and a shriek inside a blast of snow.
  * - release, or leaving the page: everything stops.
  */
 
-import { onCue } from './cues.ts';
+import { STARE_MS, onCue } from './cues.ts';
 import { envelope, getBus, noiseSource, snow, type Bus } from './sound.ts';
 
 const TICK_GAIN = 0.14;
@@ -25,7 +26,8 @@ const HEART_START_SECONDS = 1.05;
 const HEART_END_SECONDS = 0.68;
 const HEARTBEATS = 30;
 const WHISPER_GAIN = 0.05;
-const SCREAM_SECONDS = 0.9;
+const SCREAM_SECONDS = 1.1;
+const INHALE_SECONDS = 0.55;
 const FADE_SECONDS = 0.4;
 
 /** A sustained layer that can be faded out and stopped later. */
@@ -192,6 +194,66 @@ function distortionCurve(amount: number): Float32Array<ArrayBuffer> {
   return curve;
 }
 
+/** A sharp breath in, timed to end the instant the face screams. */
+function inhale(b: Bus): void {
+  const { ctx } = b;
+  const start = ctx.currentTime + STARE_MS / 1000 - INHALE_SECONDS;
+  const air = noiseSource(b);
+  const band = ctx.createBiquadFilter();
+  band.type = 'bandpass';
+  band.Q.value = 2.5;
+  band.frequency.setValueAtTime(500, start);
+  band.frequency.exponentialRampToValueAtTime(2600, start + INHALE_SECONDS);
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0.0001, start);
+  gain.gain.exponentialRampToValueAtTime(0.5, start + INHALE_SECONDS);
+  gain.gain.setValueAtTime(0.0001, start + INHALE_SECONDS + 0.01);
+  air.connect(band).connect(gain).connect(b.input);
+  air.start(start);
+  air.stop(start + INHALE_SECONDS + 0.05);
+}
+
+/** The hit under the scream: a pitched-down slam laptops can still play. */
+function impact(b: Bus): void {
+  const { ctx } = b;
+  const now = ctx.currentTime;
+  const body = ctx.createOscillator();
+  body.type = 'square';
+  body.frequency.setValueAtTime(220, now);
+  body.frequency.exponentialRampToValueAtTime(55, now + 0.5);
+  const soften = ctx.createBiquadFilter();
+  soften.type = 'lowpass';
+  soften.frequency.value = 900;
+  const gain = ctx.createGain();
+  envelope(gain.gain, now, 1, 0.003, 0.6);
+  body.connect(soften).connect(gain).connect(b.input);
+  body.start(now);
+  body.stop(now + 0.7);
+}
+
+/** A thin, piercing layer an octave and a bit above the roar. */
+function shriek(b: Bus, out: AudioNode): AudioScheduledSourceNode[] {
+  const { ctx } = b;
+  const now = ctx.currentTime;
+  return [1, 1.021].map((ratio) => {
+    const osc = ctx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(1300 * ratio, now);
+    osc.frequency.exponentialRampToValueAtTime(1900 * ratio, now + 0.3);
+    osc.frequency.exponentialRampToValueAtTime(1500 * ratio, now + SCREAM_SECONDS);
+    const band = ctx.createBiquadFilter();
+    band.type = 'bandpass';
+    band.frequency.value = 2400;
+    band.Q.value = 3;
+    const level = ctx.createGain();
+    level.gain.value = 0.35;
+    osc.connect(band).connect(level).connect(out);
+    osc.start(now);
+    osc.stop(now + SCREAM_SECONDS + 0.1);
+    return osc;
+  });
+}
+
 function scream(b: Bus): void {
   stopAll();
   const { ctx } = b;
@@ -223,6 +285,8 @@ function scream(b: Bus): void {
     osc.stop(now + SCREAM_SECONDS + 0.1);
   });
   snow(b, SCREAM_SECONDS, 0.9);
+  shriek(b, crush);
+  impact(b);
 }
 
 onCue((name) => {
@@ -235,6 +299,10 @@ onCue((name) => {
     whisper(b);
   }
   if (name === 'flash') snow(b, 0.14, 0.55);
+  if (name === 'stare') {
+    stopAll();
+    inhale(b);
+  }
   if (name === 'scream') scream(b);
   if (name === 'release') stopAll();
 });

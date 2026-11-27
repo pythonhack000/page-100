@@ -89,3 +89,18 @@ export function isSocketCell(col: number, row: number): boolean {
     (socket) => ((cx - socket.x) / SOCKET_RADIUS.x) ** 2 + ((cy - socket.y) / SOCKET_RADIUS.y) ** 2 < 1,
   );
 }
+
+/** The jaw dropped open: the face at the moment it screams. Same eyes. */
+const SCREAM_JAW = [
+  '.......o#######.########o.......',
+  '.......o#####.#...#.####o.......',
+  '.......o###.........####o.......',
+  '.......o###..........###o.......',
+  '........###..........###........',
+  '........####.........###........',
+  '.........###.#...#.####.........',
+  '..........######.#####..........',
+  '............########............',
+] as const;
+
+export const SCREAM_FRAME: readonly string[] = [...TOP, ...SCREAM_JAW];

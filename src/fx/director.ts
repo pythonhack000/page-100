@@ -21,7 +21,7 @@
  * changes navigation state: the trap swallows one input event, that's all.
  */
 
-import { cue } from './cues.ts';
+import { STARE_MS, cue } from './cues.ts';
 import { buildFaceGrid, mountWatchingFace, type WatchingFace } from './face.ts';
 
 const AT_MUTATE_MS = 3500;
@@ -43,7 +43,7 @@ const MUTATE_STEP_MS = 140;
 const CLOCK_STEP_MS = 200;
 const FACE_FADE_MS = 2500;
 const FACE_OPACITY = 0.9;
-const LUNGE_MS = 650;
+const LUNGE_MS = 1000;
 const WARNING_MS = 1800;
 const RELEASE_FADE_MS = 900;
 const SWARM_FROM_FLASH = 2;
@@ -268,17 +268,29 @@ function release(glass: HTMLElement): void {
   done?.();
 }
 
+/** The whole set shakes and strobes while it screams. */
+function setScreaming(glass: HTMLElement, on: boolean): void {
+  glass.classList.toggle('is-screaming', on);
+  document.querySelector('.tv__set')?.classList.toggle('is-screaming', on);
+}
+
 function scare(glass: HTMLElement): void {
   if (!trapArmed) return;
   trapArmed = false;
   stopFlashes();
   clearSwarm();
-  cue('scream');
-  face?.fadeTo(1, 60);
-  face?.lunge();
-  later(LUNGE_MS, () => {
-    warning(glass);
-    later(WARNING_MS, () => release(glass));
+  cue('stare');
+  face?.fadeTo(1, STARE_MS / 3);
+  face?.stare();
+  later(STARE_MS, () => {
+    cue('scream');
+    face?.lunge();
+    setScreaming(glass, true);
+    later(LUNGE_MS, () => {
+      setScreaming(glass, false);
+      warning(glass);
+      later(WARNING_MS, () => release(glass));
+    });
   });
 }
 
@@ -322,6 +334,8 @@ export function stopDirector(): void {
   trapArmed = false;
   stopFlashes();
   clearSwarm();
+  const glass = document.querySelector<HTMLElement>('.tv__glass');
+  if (glass !== null) setScreaming(glass, false);
   document.documentElement.classList.remove('is-watched');
   afterimage?.remove();
   afterimage = null;

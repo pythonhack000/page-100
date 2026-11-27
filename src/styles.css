@@ -754,11 +754,55 @@ html.is-watched * {
 }
 
 @keyframes face-lunge {
-  0% { transform: scale(1); filter: blur(0.6px) contrast(1.4); }
-  15% { transform: scale(1.75) translate(-1%, 2%) skewX(-4deg); filter: blur(0) contrast(2.4) brightness(1.4); }
-  40% { transform: scale(1.68) translate(1.5%, -1%) skewX(3deg); }
-  70% { transform: scale(1.8) translate(-0.5%, 1%); }
-  100% { transform: scale(1.72); filter: blur(0.3px) contrast(2); }
+  0% { transform: scale(1.12); filter: blur(0) contrast(2.4) brightness(1.5); }
+  10% { transform: scale(2.5) translate(-1%, 3%) skewX(-5deg); }
+  22% { transform: scale(2.3) translate(2%, -1%) skewX(4deg); }
+  38% { transform: scale(2.7) translate(-1.5%, 2%); }
+  55% { transform: scale(2.55) translate(1%, -2%) skewX(-3deg); }
+  75% { transform: scale(2.8) translate(-0.5%, 1%); }
+  100% { transform: scale(2.65); filter: blur(0.3px) contrast(2); }
+}
+
+/* Before the scream: it holds perfectly still and looks straight at you. */
+.tv__face.is-staring {
+  animation-play-state: paused;
+}
+
+.tv__face.is-staring .tv__face-wrap {
+  animation: none;
+  transform: scale(1.12);
+  transition: transform 1.3s ease-in;
+}
+
+.tv__face.is-staring .tv__face-grid {
+  animation: none;
+}
+
+.tv__face.is-staring .tv__pupil {
+  width: 1.4%;
+  transition: width 1.1s ease-in, transform 0.25s ease-out;
+}
+
+/* The scream: the set shakes and the picture strobes. */
+.tv__set.is-screaming {
+  animation: set-shake 70ms linear infinite;
+}
+
+.tv__glass.is-screaming {
+  animation: scream-strobe 110ms steps(1) infinite;
+}
+
+@keyframes set-shake {
+  0% { transform: translate(0, 0) rotate(0); }
+  25% { transform: translate(-7px, 4px) rotate(-0.7deg); }
+  50% { transform: translate(6px, -5px) rotate(0.5deg); }
+  75% { transform: translate(-4px, -3px) rotate(0.3deg); }
+  100% { transform: translate(5px, 6px) rotate(-0.4deg); }
+}
+
+@keyframes scream-strobe {
+  0% { filter: invert(1) contrast(1.6); }
+  50% { filter: brightness(1.7) saturate(3) hue-rotate(-15deg); }
 }
 
 /* ---------- Remote ---------- */
@@ -928,6 +972,8 @@ html.is-watched * {
   .tv__hijack-line,
   .tv__face,
   .tv__face-wrap,
+  .tv__set.is-screaming,
+  .tv__glass.is-screaming,
   .tv__face-grid,
   .tv__mini-face,
   .tv__dead,
