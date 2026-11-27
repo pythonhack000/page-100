@@ -23,12 +23,22 @@ import { mountWatchingFace, type WatchingFace } from './face.ts';
 const AT_MUTATE_MS = 3500;
 const AT_CLOCK_MS = 6500;
 const AT_DEAD_AIR_MS = 9500;
-const AT_PRESENCE_MS = 14000;
-const AT_AUTO_SCARE_MS = 33000;
+const AT_PRESENCE_MS = 11500;
+const AT_AUTO_SCARE_MS = 27000;
+const FLASH_EVERY_MS = 2300;
+const FLASH_MS = 160;
+const FLASHES = [
+  'TURN AROUND',
+  'IT IS IN THE ROOM',
+  'DO NOT LOOK AWAY',
+  'IT CAN SEE YOU',
+  'STAY',
+  'LOOK BEHIND YOU',
+];
 const MUTATE_STEP_MS = 140;
 const CLOCK_STEP_MS = 200;
-const FACE_FADE_MS = 6000;
-const FACE_OPACITY = 0.6;
+const FACE_FADE_MS = 2500;
+const FACE_OPACITY = 0.9;
 const LUNGE_MS = 650;
 const WARNING_MS = 1800;
 const RELEASE_FADE_MS = 900;
@@ -40,6 +50,7 @@ const CLOCK_FIRST_COL = 32;
 let timers: number[] = [];
 let clockTimer: number | null = null;
 let counterTimer: number | null = null;
+let flashTimer: number | null = null;
 let dead: HTMLElement | null = null;
 let face: WatchingFace | null = null;
 let trapArmed = false;
@@ -132,8 +143,31 @@ function deadAir(glass: HTMLElement, enteredAt: number): void {
   requestAnimationFrame(() => layer.classList.add('is-on'));
 }
 
+/** Subliminal lines: a few frames of text in the dark, then gone. */
+function startFlashes(glass: HTMLElement): void {
+  let index = 0;
+  flashTimer = window.setInterval(() => {
+    const line = document.createElement('p');
+    line.className = 'tv__flash';
+    line.setAttribute('aria-hidden', 'true');
+    line.textContent = FLASHES[index % FLASHES.length] ?? '';
+    line.style.top = `${15 + Math.random() * 65}%`;
+    line.style.left = `${10 + Math.random() * 40}%`;
+    glass.appendChild(line);
+    cue('flash');
+    index += 1;
+    window.setTimeout(() => line.remove(), FLASH_MS);
+  }, FLASH_EVERY_MS);
+}
+
+function stopFlashes(): void {
+  if (flashTimer !== null) window.clearInterval(flashTimer);
+  flashTimer = null;
+}
+
 function presence(glass: HTMLElement): void {
   cue('presence');
+  startFlashes(glass);
   face = mountWatchingFace(glass);
   face.element.style.opacity = '0';
   requestAnimationFrame(() => face?.fadeTo(FACE_OPACITY, FACE_FADE_MS));
@@ -178,6 +212,7 @@ function release(): void {
 function scare(glass: HTMLElement): void {
   if (!trapArmed) return;
   trapArmed = false;
+  stopFlashes();
   cue('scream');
   face?.fadeTo(1, 60);
   face?.lunge();
@@ -225,6 +260,7 @@ export function stopDirector(): void {
   clockTimer = null;
   counterTimer = null;
   trapArmed = false;
+  stopFlashes();
   face?.remove();
   dead?.remove();
   face = null;

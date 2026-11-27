@@ -9,6 +9,7 @@ export type CueName =
   | 'mutate-tick' // one letter of the page changed under the viewer's eyes
   | 'dead-air' // the picture dies, the hum stops
   | 'presence' // the face starts to come through
+  | 'flash' // a subliminal line flickers up in the dark
   | 'scream' // the face lunges
   | 'release'; // the set lets go and the page comes back
 

@@ -8,6 +8,7 @@
  * - mutate-tick: a dry tick for every letter that changes.
  * - dead-air: room tone and a test tone that slowly dies and bends flat.
  * - presence: a heartbeat that speeds up, and a breathy whisper.
+ * - flash: a crack of snow under each subliminal line.
  * - scream: a distorted, formant-shaped shriek inside a blast of snow.
  * - release, or leaving the page: everything stops.
  */
@@ -233,6 +234,7 @@ onCue((name) => {
     heartbeat(b);
     whisper(b);
   }
+  if (name === 'flash') snow(b, 0.14, 0.55);
   if (name === 'scream') scream(b);
   if (name === 'release') stopAll();
 });
