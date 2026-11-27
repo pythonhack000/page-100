@@ -9,33 +9,14 @@
  * Single events only (never a strobe), and skipped under reduced motion.
  */
 
+import { buildFaceGrid } from './face.ts';
+
 export type HijackKind = 'flash' | 'message';
 
 const FLASH_MS = 140;
 const MESSAGE_MS = 1700;
 
-/**
- * The face, drawn in 2 x 3 sixel blocks: # is lit, . is dark.
- * Rows are mosaic cells' worth of pixels; the CSS grid renders them as blocks.
- */
-const FACE = [
-  '.......######.......',
-  '.....##########.....',
-  '....############....',
-  '...##############...',
-  '...###..####..###...',
-  '..###....##....###..',
-  '..###.#..##..#.###..',
-  '..###....##....###..',
-  '...###..####..###...',
-  '...######..######...',
-  '....####....####....',
-  '....###......###....',
-  '....###......###....',
-  '.....###....###.....',
-  '......########......',
-  '........####........',
-];
+
 
 function messages(): readonly string[] {
   const now = new Date();
@@ -52,16 +33,9 @@ function messages(): readonly string[] {
 let messageIndex = 0;
 
 function buildFace(): HTMLElement {
-  const face = document.createElement('div');
-  face.className = 'tv__hijack-face';
-  for (const row of FACE) {
-    for (const pixel of row) {
-      const cell = document.createElement('span');
-      if (pixel === '#') cell.className = 'is-lit';
-      face.appendChild(cell);
-    }
-  }
-  return face;
+  const grid = buildFaceGrid();
+  grid.classList.add('tv__hijack-face');
+  return grid;
 }
 
 function buildMessage(): HTMLElement {
