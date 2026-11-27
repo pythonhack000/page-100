@@ -139,6 +139,7 @@ export function mountWatchingFace(glass: HTMLElement): WatchingFace {
     },
     lunge() {
       drawLowerFace(grid, SCREAM_FRAME);
+      layer.classList.remove('is-staring');
       layer.classList.add('is-lunging');
     },
     remove() {
