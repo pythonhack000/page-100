@@ -11,14 +11,19 @@
  *   5. a face comes through the dark, and its eyes follow your pointer.
  *   6. the trap: the first attempt to change channel is refused; the face
  *      lunges. If the viewer sits still, it lunges on its own.
- *   7. release: the page comes back and normal haunting resumes.
+ *   7. release: the page comes back and normal haunting resumes...
+ *   8. ...until, a few seconds later, it shows itself once more.
+ *
+ * While it watches, it tells you where you are (from the browser's time
+ * zone, nothing leaves the page), its grin widens at every drop-out, and
+ * the pointer disappears.
  *
  * It only reads and decorates the DOM the renderer produced. It never
  * changes navigation state: the trap swallows one input event, that's all.
  */
 
 import { cue } from './cues.ts';
-import { mountWatchingFace, type WatchingFace } from './face.ts';
+import { buildFaceGrid, mountWatchingFace, type WatchingFace } from './face.ts';
 
 const AT_MUTATE_MS = 3500;
 const AT_CLOCK_MS = 6500;
@@ -42,6 +47,10 @@ const FACE_OPACITY = 0.9;
 const LUNGE_MS = 650;
 const WARNING_MS = 1800;
 const RELEASE_FADE_MS = 900;
+const AFTERIMAGE_DELAY_MS = 3200;
+const AFTERIMAGE_MS = 220;
+const AFTERIMAGE_TEXT = 'IT IS STILL HERE  ';
+const AFTERIMAGE_REPEAT = 60;
 const MUTATED_LINE = 'I AM WATCHING YOU';
 const FIRST_CONTENT_ROW = 3;
 const LAST_CONTENT_ROW = 21;
@@ -51,6 +60,7 @@ let timers: number[] = [];
 let clockTimer: number | null = null;
 let counterTimer: number | null = null;
 let flashTimer: number | null = null;
+let afterimage: HTMLElement | null = null;
 let dead: HTMLElement | null = null;
 let face: WatchingFace | null = null;
 let trapArmed = false;
@@ -155,6 +165,7 @@ function startFlashes(glass: HTMLElement): void {
     line.style.left = `${10 + Math.random() * 40}%`;
     glass.appendChild(line);
     cue('flash');
+    face?.widen();
     index += 1;
     window.setTimeout(() => line.remove(), FLASH_MS);
   }, FLASH_EVERY_MS);
@@ -165,8 +176,24 @@ function stopFlashes(): void {
   flashTimer = null;
 }
 
+/** "IT IS 19:52 IN DUSHANBE", worked out from the browser's own clock. */
+function whereYouAre(): string {
+  const now = new Date();
+  const time = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const city = zone.includes('/') ? zone.split('/').pop()?.replace(/_/g, ' ').toUpperCase() : undefined;
+  return city === undefined ? `IT IS ${time} WHERE YOU ARE` : `IT IS ${time} IN ${city}`;
+}
+
 function presence(glass: HTMLElement): void {
   cue('presence');
+  document.documentElement.classList.add('is-watched');
+  if (dead !== null) {
+    const where = document.createElement('p');
+    where.className = 'tv__dead-line tv__dead-line--where';
+    where.textContent = whereYouAre();
+    dead.appendChild(where);
+  }
   startFlashes(glass);
   face = mountWatchingFace(glass);
   face.element.style.opacity = '0';
@@ -186,8 +213,30 @@ function warning(glass: HTMLElement): void {
   later(WARNING_MS, () => layer.remove());
 }
 
-function release(): void {
+/** The false ending: one more glimpse after the viewer has relaxed. */
+function showAfterimage(glass: HTMLElement): void {
+  const layer = document.createElement('div');
+  layer.className = 'tv__after';
+  layer.setAttribute('aria-hidden', 'true');
+  const text = document.createElement('p');
+  text.className = 'tv__after-text';
+  text.textContent = AFTERIMAGE_TEXT.repeat(AFTERIMAGE_REPEAT);
+  const corner = buildFaceGrid(Number.MAX_SAFE_INTEGER);
+  corner.classList.add('tv__after-face');
+  layer.append(text, corner);
+  glass.appendChild(layer);
+  afterimage = layer;
+  cue('flash');
+  later(AFTERIMAGE_MS, () => {
+    layer.remove();
+    afterimage = null;
+  });
+}
+
+function release(glass: HTMLElement): void {
   cue('release');
+  document.documentElement.classList.remove('is-watched');
+  later(AFTERIMAGE_DELAY_MS, () => showAfterimage(glass));
   if (counterTimer !== null) window.clearInterval(counterTimer);
   counterTimer = null;
   const fading = [dead, face?.element ?? null];
@@ -218,7 +267,7 @@ function scare(glass: HTMLElement): void {
   face?.lunge();
   later(LUNGE_MS, () => {
     warning(glass);
-    later(WARNING_MS, release);
+    later(WARNING_MS, () => release(glass));
   });
 }
 
@@ -261,6 +310,9 @@ export function stopDirector(): void {
   counterTimer = null;
   trapArmed = false;
   stopFlashes();
+  document.documentElement.classList.remove('is-watched');
+  afterimage?.remove();
+  afterimage = null;
   face?.remove();
   dead?.remove();
   face = null;

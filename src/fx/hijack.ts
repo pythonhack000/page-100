@@ -33,7 +33,7 @@ function messages(): readonly string[] {
 let messageIndex = 0;
 
 function buildFace(): HTMLElement {
-  const grid = buildFaceGrid();
+  const grid = buildFaceGrid(Number.MAX_SAFE_INTEGER);
   grid.classList.add('tv__hijack-face');
   return grid;
 }
